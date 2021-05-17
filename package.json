@@ -1,0 +1,24 @@
+{
+  "name": "pet-plant",
+  "version": "1.0.0",
+  "description": "monitoreo de cuidado a planta con enfoque humano estilo tamagotchi",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diespeso/Pet-Plant.git"
+  },
+  "author": "diespeso",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/diespeso/Pet-Plant/issues"
+  },
+  "homepage": "https://github.com/diespeso/Pet-Plant#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nedb": "^1.8.0",
+    "ws": "^7.4.5"
+  }
+}

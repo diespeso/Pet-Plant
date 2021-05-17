@@ -61,6 +61,10 @@ WebsocketsClient client;
 
 DynamicJsonDocument doc(1024);
 void loop() {
+  if (!client.ping("servidor?")) {
+     client.connect(SERVER);
+     Serial.println("Conexión al servidor reestablecida");
+  }
   client.poll();
   doc["temp"] = temp; //escribir el json a mandar
   temp +=1; //aumentar el contador (solo es para pruebas)

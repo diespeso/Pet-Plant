@@ -58,6 +58,7 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
         ws.addEventListener('message', function(event) {//tampoco se utiliza aun, no se si sea útil en realidad, igual dejarlo
             console.log(event.data);
         });
+        clients.page.send(32);
     }
     ws.on('close', function() { //si se desconecta un cliente
         console.log("lost one client");

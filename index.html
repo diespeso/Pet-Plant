@@ -5,18 +5,37 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<script src="web_client.js"></script>
-      
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     	<link rel="stylesheet", href="styles.css">
+
 	</head>
-  	<body onload="set_anim()">
-		
+  	<body>
+		<canvas id="myChart" width="600" height="400"></canvas>
+<script>
+var ctx = document.getElementById('myChart').getContext('2d');
+var myChart = new Chart(ctx, {
+	type: 'line',
+	data: {
+		labels: ["", "", "", "", "", "", "", ""],
+		datasets: [{
+			label: 'temp',
+			backgroundColor: 'rgb(255, 99, 132)',
+      		borderColor: 'rgb(255, 99, 132)',
+     		data: [0, 10, 5, 2, 20, 30, 45],
+		}]
+	},
+	options: {
+		responsive: false,
+	}
+});
+</script>
 		<div id="page-wrapper">
 			<div id="superior">
 				<div id="mood-meter"> <!--icono de felicidad-->
 					<img src="happy.png">
 				</div>
-				<div class="planta_feliz"> <!--icono de la planta-->
-					<img src="planta_bien.png" alt="">
+				<div id="icono_planta"> <!--icono de la planta-->
+					<img class ="planta_feliz" src="planta_bien.png" alt="">
 				</div>
 				<div id="water-meter"> <!--icono de agua-->
 					<img src="drop.png">
@@ -33,5 +52,7 @@
 			</form>
 	  	</div>
 		  <div class="animated-caricia"></div> <!--creo que no hace nada-->
-  	</body>
+  	
+
+	</body>
 </html>
