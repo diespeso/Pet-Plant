@@ -11,8 +11,9 @@ var http = require('http');
 var path = require("path");
 const WebSocketServer = require("ws/lib/websocket-server");
 
-const INTERVALO_LOGGING = 10; //cada cuantos mensajes de la esp32 se hace logging, para mantener sync con la esp32 no se usa tiempo ya
+const INTERVALO_LOGGING = 6; //cada cuantos mensajes de la esp32 se hace logging, para mantener sync con la esp32 no se usa tiempo ya
 var c_logging = INTERVALO_LOGGING;
+var c_pir = 0;
 
 mensaje = null;
 
@@ -49,17 +50,18 @@ var temp = 0; //variable donde se guarda la temp que mande la esp32
 function actualizar_servidor() {
     log_datos();
     consultar_inmediato();
+    c_pir = 0;
 }
 
 function log_datos() {
     log.insert({id: id_actual,
     temperatura: JSON.parse(mensaje).temp,
     humedad: JSON.parse(mensaje).humedad,
-    pir: JSON.parse(mensaje).pir,
+    pir: c_pir, //contador de interacciones
     tiempo: (new Date).toString().split(' ').slice(0, 5).join()});
 }
 
-function consultar_inmediato() {
+function consultar_inmediato() { //consulta los ultimos n logs
     log.count({}, function(err, count) {
         id_actual = count;
     });
@@ -67,7 +69,7 @@ function consultar_inmediato() {
     log.find({id: {$lt: id_actual, $gt: id_actual - 6}}).sort({id: 1}).exec(function(err, docs) {
         console.log(docs);
     });*/
-    log.find({id: {$lt: id_actual, $gt: id_actual - 6}}, function(err, docs) {
+    log.find({id: {$lte: id_actual, $gt: id_actual - 6}}, function(err, docs) {
         console.log(docs);
     });
 }
@@ -101,9 +103,19 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                     
                 }
                 mensaje = message;
-                if(c_logging == 0) {
-                    actualizar_servidor();
+                if(JSON.parse(mensaje).humedad != -1) {
+                    if(JSON.parse(mensaje).temp < 100) { //ignorar si es lectura rara de inicio de esp32
+                        actualizar_servidor();
+                    }
+                    
+                }
+                if(JSON.parse(mensaje).pir == 1) {
+                    c_pir++;
+                }
+                if(c_logging == 0) { //hacer logging cuando se cumpla el intervalo
                     c_logging = INTERVALO_LOGGING;
+                    clients.esp32.send("humedad");                    
+                    
                 }
                 log.count({}, function(err, count) {
                     id_actual = count;

@@ -29,10 +29,15 @@
 //byte temp = 0; //este es el contador que envio, lo uso para pruebas, en realidad sera un sensor
 
  using namespace websockets;
+ WebsocketsClient client;
  
  void onMessageCallback(WebsocketsMessage message) { //función que muestra los mensajes que se reciben desde el servidor
   Serial.print("Received: ");
   Serial.println(message.data());
+  if (message.data() == "humedad") { //servidor pide sensar humedad
+    Serial.println("peticiónsensar humedad");
+    client.send(sensar(true, true));
+  }
  }
 
  void onEventsCallback(WebsocketsEvent event, String data) {
@@ -43,7 +48,49 @@
   }
  }
 
-WebsocketsClient client;
+ int sensar_humedad() {
+  digitalWrite(gpio_tierra_out, HIGH);
+  delay(10); //sin este delay la corriente no es suficiente para medir
+  int tierra_in = analogRead(gpio_tierra_in);
+  digitalWrite(gpio_tierra_out, LOW);
+  Serial.print("humedad analog: ");
+  Serial.println(tierra_in);
+    
+  return (int)((1.0 - tierra_in / 4095.0) * 100.0); //convertir a porcentaje
+ }
+
+ String sensar(bool on_demand, bool mostrar) {
+  //si on_demand es true, sensar humedad, sino sensar todo lo demas
+  //que se monitorea cada ciclo de la esp32
+  //si mostrar es true, se mandan a serial las mediciones
+  int temp = (int)dht.readTemperature();
+  int humedad = -1;
+  if(on_demand) {
+    humedad = sensar_humedad();
+  }
+  int pir = digitalRead(gpio_pir_in);
+  if(mostrar) {
+    Serial.print("temperatura: ");
+    Serial.print(temp);
+    Serial.println("*C");
+
+    Serial.print("humedad: ");
+    Serial.print(humedad);
+    Serial.println("%");
+
+    Serial.print("pir: ");
+    Serial.println(pir);
+  }
+  DynamicJsonDocument json(1024);
+  json["temp"] = temp;
+  json["humedad"] = humedad;
+  json["pir"] = pir;
+  String out;
+  serializeJson(json, out);
+  return out;
+ }
+ 
+
 
  void setup() {
   pinMode(gpio_tierra_in, INPUT);
@@ -85,18 +132,9 @@ void loop() {
      Serial.println("Conexión al servidor reestablecida");
   }
   client.poll();
-  int temp = (int)dht.readTemperature();
-  int tierra_in = -1;
+  /*int temp = (int)dht.readTemperature();
   int humedad = -1;
-  if(c_tierra == 0) { //cada 5 segundos, si delay es 500ms
-    digitalWrite(gpio_tierra_out, HIGH);
-    tierra_in = analogRead(gpio_tierra_in);
-    digitalWrite(gpio_tierra_out, LOW);
-    c_tierra = T_TIERRA; 
-  }
-  if(tierra_in >= 0) {
-    humedad = (int)((1.0 - tierra_in / 4095.0) * 100.0);
-  }
+  humedad = sensar_humedad();
   int pir = digitalRead(gpio_pir_in);
   Serial.println(c_tierra);
   Serial.print("temperatura: ");
@@ -110,8 +148,8 @@ void loop() {
   doc["pir"] = pir;
   //temp +=1; //aumentar el contador (solo es para pruebas)
   String out;
-  serializeJson(doc, out); //serializar el json
-  client.send(out); //manda el json al servidor
+  serializeJson(doc, out); //serializar el json*/
+  client.send(sensar(false, true)); //manda el json al servidor
   c_tierra -= 1;
   delay(500); //esto pasa 1 vez por segundo, aqui se ajustaria la frecuencia de actualizacion, probablemente sea mejor mas tiempo
 }

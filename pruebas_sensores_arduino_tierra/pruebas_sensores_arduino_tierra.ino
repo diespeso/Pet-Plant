@@ -9,9 +9,11 @@ void setup() {
 }
 
 void loop() {
-  if(suelo_cont == 10) {
+  if(suelo_cont == 2) {
     digitalWrite(suelo_trigger, HIGH);
+    delay(10);
     Serial.println(analogRead(suelo_in));
+    digitalWrite(suelo_trigger, LOW);
     suelo_cont = 0;
   }
   suelo_cont += 1;
