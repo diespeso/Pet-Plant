@@ -12,7 +12,12 @@
  #define DHTTYPE DHT11
 
  int gpio_dht_in = 4;
+ 
+ int gpio_tierra_out = 5;
  int gpio_tierra_in = 34;
+ int c_tierra = 10; //cuantos ticks antes de sensar tierra
+ const int T_TIERRA = 10; //cauntos ticks antes de sensar tierra
+ 
  int gpio_pir_in = 26;
  
  DHT dht(gpio_dht_in, DHTTYPE);
@@ -42,6 +47,7 @@ WebsocketsClient client;
 
  void setup() {
   pinMode(gpio_tierra_in, INPUT);
+  pinMode(gpio_tierra_out, OUTPUT);
   pinMode(gpio_pir_in, INPUT);
   Serial.begin(115200);
   //pinMode(gpio_dht_in, INPUT);
@@ -80,9 +86,19 @@ void loop() {
   }
   client.poll();
   int temp = (int)dht.readTemperature();
-  int tierra_in = analogRead(gpio_tierra_in);
-  int humedad = (int)((1.0 - tierra_in / 4095.0) * 100.0);
+  int tierra_in = -1;
+  int humedad = -1;
+  if(c_tierra == 0) { //cada 5 segundos, si delay es 500ms
+    digitalWrite(gpio_tierra_out, HIGH);
+    tierra_in = analogRead(gpio_tierra_in);
+    digitalWrite(gpio_tierra_out, LOW);
+    c_tierra = T_TIERRA; 
+  }
+  if(tierra_in >= 0) {
+    humedad = (int)((1.0 - tierra_in / 4095.0) * 100.0);
+  }
   int pir = digitalRead(gpio_pir_in);
+  Serial.println(c_tierra);
   Serial.print("temperatura: ");
   Serial.println(temp);
   Serial.print("% humedad: ");
@@ -96,5 +112,6 @@ void loop() {
   String out;
   serializeJson(doc, out); //serializar el json
   client.send(out); //manda el json al servidor
+  c_tierra -= 1;
   delay(500); //esto pasa 1 vez por segundo, aqui se ajustaria la frecuencia de actualizacion, probablemente sea mejor mas tiempo
 }

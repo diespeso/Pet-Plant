@@ -11,7 +11,8 @@ var http = require('http');
 var path = require("path");
 const WebSocketServer = require("ws/lib/websocket-server");
 
-
+const INTERVALO_LOGGING = 10; //cada cuantos mensajes de la esp32 se hace logging, para mantener sync con la esp32 no se usa tiempo ya
+var c_logging = INTERVALO_LOGGING;
 
 mensaje = null;
 
@@ -53,6 +54,8 @@ function actualizar_servidor() {
 function log_datos() {
     log.insert({id: id_actual,
     temperatura: JSON.parse(mensaje).temp,
+    humedad: JSON.parse(mensaje).humedad,
+    pir: JSON.parse(mensaje).pir,
     tiempo: (new Date).toString().split(' ').slice(0, 5).join()});
 }
 
@@ -77,16 +80,18 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
     if(req.socket.remoteAddress == "192.168.1.70") {//si es la esp32
         console.log("Connected ESP32");
         clients.esp32 = ws;
-        if(!flag_conectado_antes) {
-            setInterval(actualizar_servidor, 10000);
+
+        //se dejo de usar porque ahora la esp32 es el reloj de todo el sistema
+        /*if(!flag_conectado_antes) {
+            setInterval(actualizar_servidor, intervalo_logging);
             flag_conectado_antes = true;
-        }
+        }*/
         
         ws.on('message', function incoming(message) { //recibir los mensajes de la esp32
             
             console.log("ESP32: " + message);
             if(message != "Hi, im ESP32: ok.") {
-                if(flag_primero) {
+                if(flag_primero) { //la primer lectura en cuanto se conecta la esp32 siempre se toma en cuenta
                     mensaje = message;
                     if(JSON.parse(mensaje).temp < 100) { //al inicializarse da valores nan: de un max, los cuales son basura
                         //asi que utilizo esto para no registrar nada hasta que la esp32 se estabilice.
@@ -96,9 +101,14 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                     
                 }
                 mensaje = message;
+                if(c_logging == 0) {
+                    actualizar_servidor();
+                    c_logging = INTERVALO_LOGGING;
+                }
                 log.count({}, function(err, count) {
                     id_actual = count;
                 });
+                c_logging -= 1;
             }
             
             clients.esp32.send("ok, echo:" + message); //este mensaje lo manda el server a la esp32 como confirmacion
