@@ -88,8 +88,12 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
             if(message != "Hi, im ESP32: ok.") {
                 if(flag_primero) {
                     mensaje = message;
-                    log_datos();
-                    flag_primero = false;
+                    if(JSON.parse(mensaje).temp < 100) { //al inicializarse da valores nan: de un max, los cuales son basura
+                        //asi que utilizo esto para no registrar nada hasta que la esp32 se estabilice.
+                        log_datos();
+                        flag_primero = false;
+                    }
+                    
                 }
                 mensaje = message;
                 log.count({}, function(err, count) {

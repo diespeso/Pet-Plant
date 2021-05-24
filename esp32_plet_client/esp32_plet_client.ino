@@ -7,15 +7,23 @@
  #include "WiFi.h"
  #include <ArduinoWebsockets.h>
  #include <ArduinoJson.h>
+ #include "DHT.h"
+
+ #define DHTTYPE DHT11
+
+ int gpio_dht_in = 4;
+ int gpio_tierra_in = 34;
+ int gpio_pir_in = 26;
+ 
+ DHT dht(gpio_dht_in, DHTTYPE);
 
  const char* _SSID = "INFINITUMx5e2"; //esta es mi red de wifi
  const char* PASSWORD = "078603d626"; //mi clave, no me roben el wifi
  const uint16_t PORT = 80;
  const char* SERVER = "http://192.168.1.83:80"; //ip y puerto del cliente nodejs
- int temp = 11; //este es el contador que envio, lo uso para pruebas, en realidad sera un sensor
+//byte temp = 0; //este es el contador que envio, lo uso para pruebas, en realidad sera un sensor
 
  using namespace websockets;
-
  
  void onMessageCallback(WebsocketsMessage message) { //función que muestra los mensajes que se reciben desde el servidor
   Serial.print("Received: ");
@@ -30,11 +38,14 @@
   }
  }
 
-
 WebsocketsClient client;
 
  void setup() {
+  pinMode(gpio_tierra_in, INPUT);
+  pinMode(gpio_pir_in, INPUT);
   Serial.begin(115200);
+  //pinMode(gpio_dht_in, INPUT);
+  dht.begin();
   WiFi.mode(WIFI_STA);
   delay(100);
 
@@ -57,19 +68,33 @@ WebsocketsClient client;
   client.ping(); //no se que haga, pero hay que dejarlo jeje, creo que no hace nada
     
   Serial.println("setup done.");
+  delay(1000);
  }
 
 DynamicJsonDocument doc(1024);
+
 void loop() {
   if (!client.ping("servidor?")) {
      client.connect(SERVER);
      Serial.println("Conexión al servidor reestablecida");
   }
   client.poll();
+  int temp = (int)dht.readTemperature();
+  int tierra_in = analogRead(gpio_tierra_in);
+  int humedad = (int)((1.0 - tierra_in / 4095.0) * 100.0);
+  int pir = digitalRead(gpio_pir_in);
+  Serial.print("temperatura: ");
+  Serial.println(temp);
+  Serial.print("% humedad: ");
+  Serial.println(humedad);
+  Serial.print("pir mov: ");
+  Serial.println(pir);
   doc["temp"] = temp; //escribir el json a mandar
-  temp +=1; //aumentar el contador (solo es para pruebas)
+  doc["humedad"] = humedad;
+  doc["pir"] = pir;
+  //temp +=1; //aumentar el contador (solo es para pruebas)
   String out;
   serializeJson(doc, out); //serializar el json
   client.send(out); //manda el json al servidor
-  delay(1000); //esto pasa 1 vez por segundo, aqui se ajustaria la frecuencia de actualizacion, probablemente sea mejor mas tiempo
+  delay(500); //esto pasa 1 vez por segundo, aqui se ajustaria la frecuencia de actualizacion, probablemente sea mejor mas tiempo
 }
