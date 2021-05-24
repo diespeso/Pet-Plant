@@ -11,9 +11,9 @@ var http = require('http');
 var path = require("path");
 const WebSocketServer = require("ws/lib/websocket-server");
 
-const INTERVALO_LOGGING = 6; //cada cuantos mensajes de la esp32 se hace logging, para mantener sync con la esp32 no se usa tiempo ya
-var c_logging = INTERVALO_LOGGING;
-var c_pir = 0;
+const INTERVALO_ACTUALIZACION = 10; //cada cuantos mensajes de la esp32 se hace un log / se actuakuza el server.
+var c_logging = INTERVALO_ACTUALIZACION;
+var c_pir = 0; //contador de cuantas veces se activo el pir entre cada actualización del server
 
 mensaje = null;
 
@@ -25,35 +25,34 @@ const server = http.createServer(app); //se crea el server
 //websocket
 const WebSocket = require('ws');
 const s = new WebSocket.Server({server}); //websocket creado usando el server
-var clients = {
+var clients = { //el server 
     esp32: Object(),
-    page: Object(),
+    page: Object(), //cliente web app, por facilidad solo se permitirá uno conectado
 };
 
-const log = new Datastore({filename: 'log.db'});
-log.loadDatabase();
+const log = new Datastore({filename: 'log.db'}); //abrir la bd
+log.loadDatabase(); //cargar bd
 
-log.ensureIndex({fieldName: 'id', unique: true}, function(err){});
+log.ensureIndex({fieldName: 'id', unique: true}, function(err){}); //indexar por id
 
-log.count({}, function(err, count) {
+log.count({}, function(err, count) { //se inicia el id al total de inserciones, si hay 1, entonces el id es 1 ya que el anterior era 0
     id_actual = count;
 });
 
 app.use(express.static(__dirname + '/public')); //se usan los archivos html y css de la carpeta public
 
-app.get('/', function(req, res){
+app.get('/', function(req, res){ //punto de entrada?, directamente mostrar index.html
     res.sendFile(path.join(__dirname + '/index.html')); 
 });
-
-var temp = 0; //variable donde se guarda la temp que mande la esp32
 
 function actualizar_servidor() {
     log_datos();
     consultar_inmediato();
-    c_pir = 0;
+    c_pir = 0; //cada vez que se actualiza, se vuelven a contar las interacciones pir
 }
 
 function log_datos() {
+    //mete la lectura de los sensores desde la esp32 a la bd
     log.insert({id: id_actual,
     temperatura: JSON.parse(mensaje).temp,
     humedad: JSON.parse(mensaje).humedad,
@@ -62,39 +61,32 @@ function log_datos() {
 }
 
 function consultar_inmediato() { //consulta los ultimos n logs
+    //esta funcion se usará para obtener los coeficientes de cada icono mostrado en frontend
+    //TODO: proponer un algoritmo o fórmula para sacar coeficiente de felicidad y dependientes.
     log.count({}, function(err, count) {
         id_actual = count;
     });
-    /*
-    log.find({id: {$lt: id_actual, $gt: id_actual - 6}}).sort({id: 1}).exec(function(err, docs) {
-        console.log(docs);
-    });*/
-    log.find({id: {$lte: id_actual, $gt: id_actual - 6}}, function(err, docs) {
+
+    log.find({id: {$lte: id_actual, $gt: id_actual - 6}}, function(err, docs) { //query de nedb para obtener los últimos 6 logs, probs terminen siendo 5: 1hr.
         console.log(docs);
     });
 }
 
-flag_primero = true;
-flag_conectado_antes = false;
+flag_primero = true; //primer mensaje?
+flag_conectado_antes = false; //reconexión?
 
 s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
     console.log("conected: " + req.socket.remoteAddress); //mostrar su IP
     if(req.socket.remoteAddress == "192.168.1.70") {//si es la esp32
         console.log("Connected ESP32");
         clients.esp32 = ws;
-
-        //se dejo de usar porque ahora la esp32 es el reloj de todo el sistema
-        /*if(!flag_conectado_antes) {
-            setInterval(actualizar_servidor, intervalo_logging);
-            flag_conectado_antes = true;
-        }*/
         
         ws.on('message', function incoming(message) { //recibir los mensajes de la esp32
             
-            console.log("ESP32: " + message);
+            console.log("ESP32: " + message); //mostrar mensaje recibido
             if(message != "Hi, im ESP32: ok.") {
+                mensaje = message;
                 if(flag_primero) { //la primer lectura en cuanto se conecta la esp32 siempre se toma en cuenta
-                    mensaje = message;
                     if(JSON.parse(mensaje).temp < 100) { //al inicializarse da valores nan: de un max, los cuales son basura
                         //asi que utilizo esto para no registrar nada hasta que la esp32 se estabilice.
                         log_datos();
@@ -102,33 +94,35 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                     }
                     
                 }
-                mensaje = message;
-                if(JSON.parse(mensaje).humedad != -1) {
+                if(JSON.parse(mensaje).humedad != -1) { //humedad monitoreada, on demand?
                     if(JSON.parse(mensaje).temp < 100) { //ignorar si es lectura rara de inicio de esp32
                         actualizar_servidor();
-                    }
-                    
+                    }               
                 }
-                if(JSON.parse(mensaje).pir == 1) {
+
+                if(JSON.parse(mensaje).pir == 1) { //contabilizar interacciones pir
                     c_pir++;
                 }
                 if(c_logging == 0) { //hacer logging cuando se cumpla el intervalo
-                    c_logging = INTERVALO_LOGGING;
-                    clients.esp32.send("humedad");                    
+                    c_logging = INTERVALO_ACTUALIZACION;
+                    clients.esp32.send("humedad"); //este mensaje hará que la esp32 responda con un mensaje que
+                    //contiene un valor de humedad válido, entonces de forma indirecta actualiza el servidor.                    
                     
                 }
-                log.count({}, function(err, count) {
+                log.count({}, function(err, count) { //actualizar el id_actual
                     id_actual = count;
                 });
-                c_logging -= 1;
+                c_logging -= 1; //actualizar contador de logs faltantes para actualizar servidor
             }
             
             clients.esp32.send("ok, echo:" + message); //este mensaje lo manda el server a la esp32 como confirmacion
             if (Object.keys(clients.page) == 0) {
                 console.log("page client not online") //si no hay un web client conectado
                 return;
-            } else {
-                clients.page.send(message);
+            } else { //enviar el mensaje de la esp32 al cliente webapp: como un puente
+                console.log("mensaje: ");
+                console.log(mensaje);
+                clients.page.send(mensaje);
             }
             
         })
@@ -146,10 +140,10 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
         ws.addEventListener('message', function(event) {//tampoco se utiliza aun, no se si sea útil en realidad, igual dejarlo
             console.log(event.data);
         });
-        clients.page.send(32);
+        //clients.page.send(32);
     }
     ws.on('close', function() { //si se desconecta un cliente
-        console.log("lost one client");
+        console.log("cliente desconectado");
     });
     s.on('message', function(message) {//tampoco se usa, creo. igual dejar
         if (message.data == "esp32 updated") {

@@ -11,17 +11,18 @@
 
  #define DHTTYPE DHT11
 
+//pines
  int gpio_dht_in = 4;
  
  int gpio_tierra_out = 5;
  int gpio_tierra_in = 34;
- int c_tierra = 10; //cuantos ticks antes de sensar tierra
- const int T_TIERRA = 10; //cauntos ticks antes de sensar tierra
  
  int gpio_pir_in = 26;
- 
+
+ //dht
  DHT dht(gpio_dht_in, DHTTYPE);
 
+//red local
  const char* _SSID = "INFINITUMx5e2"; //esta es mi red de wifi
  const char* PASSWORD = "078603d626"; //mi clave, no me roben el wifi
  const uint16_t PORT = 80;
@@ -35,7 +36,7 @@
   Serial.print("Received: ");
   Serial.println(message.data());
   if (message.data() == "humedad") { //servidor pide sensar humedad
-    Serial.println("peticiónsensar humedad");
+    Serial.println("petición sensar humedad");
     client.send(sensar(true, true));
   }
  }
@@ -48,12 +49,15 @@
   }
  }
 
- int sensar_humedad() {
+ int sensar_humedad() { //enciende el sensor de humedad, sensa y se apaga
+  //esto se hace porque el sensor se va dañando si se deja todo el tiempo ON
+  //debido a que funciona por medio de electrólisis, la cual oxida los metales
+  //https://lastminuteengineers.com/soil-moisture-sensor-arduino-tutorial/
   digitalWrite(gpio_tierra_out, HIGH);
-  delay(10); //sin este delay la corriente no es suficiente para medir
+  delay(10); //sin este delay la corriente no es suficiente para medir y da malos valores
   int tierra_in = analogRead(gpio_tierra_in);
   digitalWrite(gpio_tierra_out, LOW);
-  Serial.print("humedad analog: ");
+  Serial.print("humedad analog: "); //debug, pero no estorba
   Serial.println(tierra_in);
     
   return (int)((1.0 - tierra_in / 4095.0) * 100.0); //convertir a porcentaje
@@ -97,7 +101,6 @@
   pinMode(gpio_tierra_out, OUTPUT);
   pinMode(gpio_pir_in, INPUT);
   Serial.begin(115200);
-  //pinMode(gpio_dht_in, INPUT);
   dht.begin();
   WiFi.mode(WIFI_STA);
   delay(100);
@@ -118,38 +121,19 @@
     
   client.connect(SERVER);
   client.send("Hi, im ESP32: ok."); //presentarse en el server
-  client.ping(); //no se que haga, pero hay que dejarlo jeje, creo que no hace nada
+  client.ping();
     
   Serial.println("setup done.");
   delay(1000);
  }
 
-DynamicJsonDocument doc(1024);
-
 void loop() {
-  if (!client.ping("servidor?")) {
+  if (!client.ping("servidor?")) { //resistencia a desconexiones
      client.connect(SERVER);
      Serial.println("Conexión al servidor reestablecida");
   }
   client.poll();
-  /*int temp = (int)dht.readTemperature();
-  int humedad = -1;
-  humedad = sensar_humedad();
-  int pir = digitalRead(gpio_pir_in);
-  Serial.println(c_tierra);
-  Serial.print("temperatura: ");
-  Serial.println(temp);
-  Serial.print("% humedad: ");
-  Serial.println(humedad);
-  Serial.print("pir mov: ");
-  Serial.println(pir);
-  doc["temp"] = temp; //escribir el json a mandar
-  doc["humedad"] = humedad;
-  doc["pir"] = pir;
-  //temp +=1; //aumentar el contador (solo es para pruebas)
-  String out;
-  serializeJson(doc, out); //serializar el json*/
+
   client.send(sensar(false, true)); //manda el json al servidor
-  c_tierra -= 1;
   delay(500); //esto pasa 1 vez por segundo, aqui se ajustaria la frecuencia de actualizacion, probablemente sea mejor mas tiempo
 }
