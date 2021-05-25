@@ -43,14 +43,6 @@ sock.onopen = function(event) { //cuando se crea un cliente web app se presenta 
 });
 }
 function dis() { //esta funcion se llama si se le da click al boton y no esta conectado, era de prueba
-  document.getElementById("close").textContent = "no";
-  if(anim) {
-    document.getElementById("icono_planta").classList.add("columpio_anim");
-    anim = false;
-  } else {
-    document.getElementById("icono_planta").classList.remove("columpio_anim");
-    anim = true;
-  }
   return false;
 }
 

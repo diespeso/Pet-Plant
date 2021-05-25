@@ -1,6 +1,22 @@
 //app.js
 //programa servidor para el proyecto de planta mascota.
 
+
+
+
+
+
+
+
+
+
+//TODO: asegurarse de que siempre se mandan mensajes correctos al server
+
+
+
+
+
+
 //modulos y constantes
 var bodyParser = require("body-parser");
 const express = require('express');
@@ -51,6 +67,70 @@ function actualizar_servidor() {
     c_pir = 0; //cada vez que se actualiza, se vuelven a contar las interacciones pir
 }
 
+var anteriores;
+function calcular_indices() {
+    var indices = {};
+    humedades = [];
+    log.count({}, function(err, count) {
+        id_actual = count;
+    });
+
+    //consultar logs de la ultima hora: 6 logs
+    log.find({id: {$lte: id_actual, $gt: id_actual - 6}}, function(err, docs) { //query de nedb para obtener los últimos 6 logs, probs terminen siendo 5: 1hr.
+        anteriores = docs;
+    });
+    //si se consultaron bien
+    if(anteriores) {
+        console.log("anteriores ok");
+        if(anteriores.length == 6) { //solo si ya tenemos una hora registrada: 6 logs
+            for(var i = 0; i < anteriores.length; i++) {
+                humedades.push(anteriores[i].humedad);
+            }
+            
+            indices.humedad = calcular_indice_humedad(humedades);
+        }
+    }
+    console.log("indices internos:");
+    console.log(indices);
+    return indices;
+}
+
+function calcular_indice_humedad(humedades) {
+    //se calcula una media ponderada dándole más peso a las lecturas más recientes.
+    pesos = [0.7, 0.8, 0.9, 1.0, 1.1, 1.2];
+    humedades_procesadas = [0, 0, 0, 0, 0, 0];
+    sumatoria = 0.0;
+    for(var i = 0; i < humedades.length; i++) {
+        humedades_procesadas[i] = humedades[i] * pesos[i];
+        sumatoria += humedades_procesadas[i];
+    }
+    return sumatoria / 6.0;
+}
+
+var mensaje;
+function generar_mensaje_webapp(mensaje_500ms) {
+    if(mensaje_500ms) {
+        mensaje = mensaje_500ms;
+        if(JSON.parse(mensaje_500ms).humedad != -1) {
+            indices = calcular_indices();
+            mensaje = JSON.parse(mensaje_500ms);
+            console.log("indices:");
+            console.log(indices);
+            mensaje.humedad = indices.humedad;
+            //console.log(mensaje);
+            return JSON.stringify(mensaje, null, 2);
+        }
+        mensaje = JSON.parse(mensaje_500ms);
+        mensaje.luz = 0;
+        mensaje.pir_live = mensaje.pir;
+        mensaje.humedad = null;
+        mensaje.indice_luz = null;
+        mensaje.indice_felicidad = null;
+        return JSON.stringify(mensaje);
+    }
+    
+}
+
 function log_datos() {
     //mete la lectura de los sensores desde la esp32 a la bd
     log.insert({id: id_actual,
@@ -68,7 +148,7 @@ function consultar_inmediato() { //consulta los ultimos n logs
     });
 
     log.find({id: {$lte: id_actual, $gt: id_actual - 6}}, function(err, docs) { //query de nedb para obtener los últimos 6 logs, probs terminen siendo 5: 1hr.
-        console.log(docs);
+        //console.log(docs);
     });
 }
 
@@ -89,8 +169,10 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                 if(flag_primero) { //la primer lectura en cuanto se conecta la esp32 siempre se toma en cuenta
                     if(JSON.parse(mensaje).temp < 100) { //al inicializarse da valores nan: de un max, los cuales son basura
                         //asi que utilizo esto para no registrar nada hasta que la esp32 se estabilice.
-                        log_datos();
                         flag_primero = false;
+                        clients.esp32.send("humedad");
+                        //log_datos();
+                        
                     }
                     
                 }
@@ -120,9 +202,9 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                 console.log("page client not online") //si no hay un web client conectado
                 return;
             } else { //enviar el mensaje de la esp32 al cliente webapp: como un puente
-                console.log("mensaje: ");
-                console.log(mensaje);
-                clients.page.send(mensaje);
+                /*console.log("mensaje: ");
+                console.log(mensaje);*/
+                clients.page.send(generar_mensaje_webapp(mensaje)); //FIX: si genero aqui, entonces solo se calculan cuando la webapp esta on, cambiar
             }
             
         })
