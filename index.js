@@ -71,6 +71,7 @@ var anteriores;
 function calcular_indices() {
     var indices = {};
     humedades = [];
+    iluminaciones = [];
     log.count({}, function(err, count) {
         id_actual = count;
     });
@@ -85,9 +86,19 @@ function calcular_indices() {
         if(anteriores.length == 6) { //solo si ya tenemos una hora registrada: 6 logs
             for(var i = 0; i < anteriores.length; i++) {
                 humedades.push(anteriores[i].humedad);
+                iluminaciones.push(anteriores[i].luz);
             }
             
             indices.humedad = calcular_indice_humedad(humedades);
+            //logica para indice de luz discreto
+            indice_luz = calcular_indice_luz(iluminaciones);
+            if(indice_luz < 50) {
+                indices.luz = 1;
+            }else if(indice_luz < 70) {
+                indices.luz = 2;
+            }else if(indice_luz < 100) {
+                indices.luz = 3;
+            }
         }
     }
     console.log("indices internos:");
@@ -107,25 +118,40 @@ function calcular_indice_humedad(humedades) {
     return sumatoria / 6.0;
 }
 
+function calcular_indice_luz(iluminaciones) {
+    pesos = [0.7, 0.8, 0.9, 1.0, 1.1, 1.2];
+    iluminaciones_procesadas = [0, 0, 0, 0, 0, 0];
+    sumatoria = 0.0;
+    for(var i = 0; i < iluminaciones.length; i++) {
+        iluminaciones_procesadas[i] = iluminaciones[i] * pesos[i];
+        sumatoria += iluminaciones_procesadas[i];
+    }
+    return sumatoria / 6.0;
+}
+
 var mensaje;
 function generar_mensaje_webapp(mensaje_500ms) {
     if(mensaje_500ms) {
         mensaje = mensaje_500ms;
-        if(JSON.parse(mensaje_500ms).humedad != -1) {
+        if(JSON.parse(mensaje_500ms).humedad != -1) { //mensaje de los 20 minutos
             indices = calcular_indices();
             mensaje = JSON.parse(mensaje_500ms);
             console.log("indices:");
             console.log(indices);
             mensaje.humedad = indices.humedad;
+            mensaje.pir_live = mensaje.pir;
+            mensaje.indice_luz = indices.luz;
+            mensaje.indice_felicidad = 3;
+            delete mensaje.pir;
             //console.log(mensaje);
             return JSON.stringify(mensaje, null, 2);
         }
-        mensaje = JSON.parse(mensaje_500ms);
-        mensaje.luz = 0;
+        mensaje = JSON.parse(mensaje_500ms);        
         mensaje.pir_live = mensaje.pir;
         mensaje.humedad = null;
         mensaje.indice_luz = null;
         mensaje.indice_felicidad = null;
+        delete mensaje.pir;
         return JSON.stringify(mensaje);
     }
     
@@ -137,6 +163,7 @@ function log_datos() {
     temperatura: JSON.parse(mensaje).temp,
     humedad: JSON.parse(mensaje).humedad,
     pir: c_pir, //contador de interacciones
+    luz: JSON.parse(mensaje).luz,
     tiempo: (new Date).toString().split(' ').slice(0, 5).join()});
 }
 
@@ -176,6 +203,7 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                     }
                     
                 }
+                
                 if(JSON.parse(mensaje).humedad != -1) { //humedad monitoreada, on demand?
                     if(JSON.parse(mensaje).temp < 100) { //ignorar si es lectura rara de inicio de esp32
                         actualizar_servidor();
@@ -196,7 +224,7 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                 });
                 c_logging -= 1; //actualizar contador de logs faltantes para actualizar servidor
             }
-            
+            mensaje_webapp = generar_mensaje_webapp(mensaje);
             clients.esp32.send("ok, echo:" + message); //este mensaje lo manda el server a la esp32 como confirmacion
             if (Object.keys(clients.page) == 0) {
                 console.log("page client not online") //si no hay un web client conectado
@@ -204,7 +232,10 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
             } else { //enviar el mensaje de la esp32 al cliente webapp: como un puente
                 /*console.log("mensaje: ");
                 console.log(mensaje);*/
-                clients.page.send(generar_mensaje_webapp(mensaje)); //FIX: si genero aqui, entonces solo se calculan cuando la webapp esta on, cambiar
+                if(mensaje_webapp != {}) { //solo si hubo exito generando el mensaje
+                    clients.page.send(mensaje_webapp); //FIX: si genero aqui, entonces solo se calculan cuando la webapp esta on, cambiar
+                }
+                
             }
             
         })

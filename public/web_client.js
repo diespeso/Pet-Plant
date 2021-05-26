@@ -33,7 +33,7 @@ sock.onopen = function(event) { //cuando se crea un cliente web app se presenta 
     sock.send("ok, connected");
     sock.addEventListener('message', function(event) {
       console.log(event.data);
-      if(JSON.parse(event.data).pir == 1) {
+      if(JSON.parse(event.data).pir_live == 1) {
         document.getElementById("close").textContent = "no";
         document.getElementById("icono_planta").classList.add("columpio_anim");
       } else {

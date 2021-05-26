@@ -19,6 +19,8 @@
  
  int gpio_pir_in = 26;
 
+ int gpio_foto_in = 35;
+
  //dht
  DHT dht(gpio_dht_in, DHTTYPE);
 
@@ -73,6 +75,8 @@
     humedad = sensar_humedad();
   }
   int pir = digitalRead(gpio_pir_in);
+  int luz_lectura = analogRead(gpio_foto_in);
+  int luz = (luz_lectura / 4095.0) * 100.0;
   if(mostrar) {
     Serial.print("temperatura: ");
     Serial.print(temp);
@@ -84,11 +88,17 @@
 
     Serial.print("pir: ");
     Serial.println(pir);
+
+    Serial.print("luz, analog: ");
+    Serial.println(luz_lectura);
+    Serial.print("luz %: ");
+    Serial.println(luz);
   }
   DynamicJsonDocument json(1024);
   json["temp"] = temp;
   json["humedad"] = humedad;
   json["pir"] = pir;
+  json["luz"] = luz;
   String out;
   serializeJson(json, out);
   return out;
