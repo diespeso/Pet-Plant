@@ -109,7 +109,7 @@
  void setup() {
   pinMode(gpio_tierra_in, INPUT);
   pinMode(gpio_tierra_out, OUTPUT);
-  pinMode(gpio_pir_in, INPUT);
+  pinMode(gpio_pir_in, INPUT_PULLDOWN);
   Serial.begin(115200);
   dht.begin();
   WiFi.mode(WIFI_STA);

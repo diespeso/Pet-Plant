@@ -10,7 +10,8 @@
 
 
 
-//TODO: asegurarse de que siempre se mandan mensajes correctos al server
+//TODO: implementar modo noche: dejar de sensar luz por las noches
+//TODO: verificar luz de sol con sensor de temperatura(?)
 
 
 
@@ -72,6 +73,7 @@ function calcular_indices() {
     var indices = {};
     humedades = [];
     iluminaciones = [];
+    interacciones = [];
     log.count({}, function(err, count) {
         id_actual = count;
     });
@@ -87,23 +89,74 @@ function calcular_indices() {
             for(var i = 0; i < anteriores.length; i++) {
                 humedades.push(anteriores[i].humedad);
                 iluminaciones.push(anteriores[i].luz);
+                interacciones.push(anteriores[i].pir);
             }
             
-            indices.humedad = calcular_indice_humedad(humedades);
+            i_h = calcular_indice_humedad(humedades);
+            indices.humedad = i_h;
+            
             //logica para indice de luz discreto
-            indice_luz = calcular_indice_luz(iluminaciones);
-            if(indice_luz < 50) {
-                indices.luz = 1;
-            }else if(indice_luz < 70) {
-                indices.luz = 2;
-            }else if(indice_luz < 100) {
-                indices.luz = 3;
-            }
+            i_l = calcular_indice_luz(iluminaciones);
+            indices.luz = normalizar_indice_luz(i_l);
+
+            i_i = calcular_indice_interacciones(interacciones);
+            indices.felicidad = normalizar_indice_felicidad(
+                calcular_indice_felicidad(i_h, i_i, i_l)
+            );
+            console.log("indices internos: ");
+            console.log(i_h, i_l, i_i, indices.felicidad);
         }
     }
-    console.log("indices internos:");
+    console.log("indices normales: ");
     console.log(indices);
     return indices;
+}
+
+function calcular_indice_felicidad(indice_humedad, indice_interacciones, indice_luz) {
+    //argumentos: indices sin normalizar
+    humedad_normal = normalizar_indice_humedad(indice_humedad);
+    interacciones_normal = normalizar_indice_interacciones(indice_interacciones);
+    luz_normal = normalizar_indice_luz(indice_luz);
+
+    indice_felicidad = interacciones_normal;
+    necesidades = [true, true]; //necesidades, al menos una debe ser cubierta para aplicar bono de interaccion
+    if(humedad_normal == 1 || humedad_normal == 3) {
+        indice_felicidad -= 1;
+        necesidades[0] = false;
+    } else {
+        indice_felicidad += 1;
+    }
+
+    if(luz_normal == 1 || luz_normal == 3) {
+        indice_felicidad -= 1;
+        necesidades[1] = false;
+    } else {
+        indice_felicidad += 1;
+    }
+
+    if(necesidades[0] == false && necesidades[1] == false) {
+        indice_felicidad -= interacciones_normal; //si ambas necesidades estan mal, quitar bono de interaccion
+    } else if(necesidades[0] == false || necesidades[1] == false) {
+        if(interacciones_normal > 0) {
+            indice_felicidad -= 1; //si solo una esta mal, penalizar un punto al bono de interaccion
+        }
+    }
+    console.log("indice felicidad interno: ");
+
+    console.log(indice_felicidad);
+    return indice_felicidad;
+}
+
+function normalizar_indice_felicidad(indice_felicidad) {
+    if(indice_felicidad == -2 || indice_felicidad == -1) {
+        return 1; //x_x
+    } else if(indice_felicidad == 0) {
+        return 2; // :(
+    } else if(indice_felicidad == 1 || indice_felicidad == 2) {
+        return 3; // c:
+    } else if(indice_felicidad == 3 || indice_felicidad == 4) {
+        return 4; //:DDDDDDD
+    }
 }
 
 function calcular_indice_humedad(humedades) {
@@ -115,7 +168,17 @@ function calcular_indice_humedad(humedades) {
         humedades_procesadas[i] = humedades[i] * pesos[i];
         sumatoria += humedades_procesadas[i];
     }
-    return sumatoria / 6.0;
+    return Math.round(sumatoria / 6.0);
+}
+
+function normalizar_indice_humedad(indice) {
+    if(indice <= 20) {
+        return 1; //seco
+    } else if(indice <= 70) {
+        return 2; //perfecto
+    } else if(indice <= 100) {
+        return 3; //exceso de humedad
+    }
 }
 
 function calcular_indice_luz(iluminaciones) {
@@ -126,7 +189,35 @@ function calcular_indice_luz(iluminaciones) {
         iluminaciones_procesadas[i] = iluminaciones[i] * pesos[i];
         sumatoria += iluminaciones_procesadas[i];
     }
-    return sumatoria / 6.0;
+    return Math.round(sumatoria / 6.0);
+}
+
+function normalizar_indice_luz(indice) {
+    if(indice <= 10) {
+        return 1; //falta de luz
+    } else if (indice <= 75) {
+        return 2; //perfecto
+    } else if(indice <= 100) {
+        return 3; //demasiada luz
+    }
+}
+
+function calcular_indice_interacciones(interacciones) {
+    sumatoria = 0;
+    for(var i = 0; i < interacciones.length; i++) {
+        sumatoria += interacciones[i];
+    }
+    return sumatoria;
+}
+
+function normalizar_indice_interacciones(indice) {
+    if(indice == 0) {
+        return 0; //poca interaccion
+    } else if(indice <= 10) {
+        return 1; //algo de interaccion
+    } else {
+        return 2; //mucha interaccion: bonus
+    }
 }
 
 var mensaje;
@@ -141,7 +232,7 @@ function generar_mensaje_webapp(mensaje_500ms) {
             mensaje.humedad = indices.humedad;
             mensaje.pir_live = mensaje.pir;
             mensaje.indice_luz = indices.luz;
-            mensaje.indice_felicidad = 3;
+            mensaje.indice_felicidad = indices.felicidad;
             delete mensaje.pir;
             //console.log(mensaje);
             return JSON.stringify(mensaje, null, 2);
@@ -155,6 +246,18 @@ function generar_mensaje_webapp(mensaje_500ms) {
         return JSON.stringify(mensaje);
     }
     
+}
+
+function verificar_mensaje_webapp(mensaje) {
+    var prop = 'indice_felicidad';
+    if(mensaje) {
+        if(prop in JSON.parse(mensaje)) {
+            return true;
+        }
+    }
+    console.log("atorado: ");
+    console.log(mensaje);
+    return false;
 }
 
 function log_datos() {
@@ -223,6 +326,8 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                     id_actual = count;
                 });
                 c_logging -= 1; //actualizar contador de logs faltantes para actualizar servidor
+            } else { //si es un saludo, no hacer procesamiento
+                return;
             }
             mensaje_webapp = generar_mensaje_webapp(mensaje);
             clients.esp32.send("ok, echo:" + message); //este mensaje lo manda el server a la esp32 como confirmacion
@@ -233,7 +338,10 @@ s.on('connection', function(ws, req) { //evento: alguien se conecta al servidor
                 /*console.log("mensaje: ");
                 console.log(mensaje);*/
                 if(mensaje_webapp != {}) { //solo si hubo exito generando el mensaje
-                    clients.page.send(mensaje_webapp); //FIX: si genero aqui, entonces solo se calculan cuando la webapp esta on, cambiar
+                    if(verificar_mensaje_webapp(mensaje_webapp)) {
+                        clients.page.send(mensaje_webapp); 
+                    }
+                    //FIX: si genero aqui, entonces solo se calculan cuando la webapp esta on, cambiar
                 }
                 
             }
