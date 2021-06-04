@@ -72,11 +72,13 @@
 {"id":360,"temperatura":24,"humedad":57,"pir":4,"luz":2,"tiempo":"Sat,May,29,2021,23:36:33","_id":"A1g4MRsTUmuOvdjz"}
 {"id":139,"temperatura":25,"humedad":0,"pir":0,"luz":1,"tiempo":"Sat,May,29,2021,22:50:18","_id":"AjwSrJoP5j4vBeey"}
 {"id":133,"temperatura":25,"humedad":0,"pir":2,"luz":1,"tiempo":"Sat,May,29,2021,22:49:50","_id":"B1GJ8Gfm9GTlCSA9"}
+{"id":363,"temperatura":23,"humedad":59,"pir":0,"luz":12,"tiempo":"Sun,May,30,2021,00:24:53","_id":"B5TPrjCpav6uWgMd"}
 {"id":46,"temperatura":24,"humedad":0,"pir":3,"luz":2,"tiempo":"Sat,May,29,2021,22:43:08","_id":"B8dn7fBekr2ayHb7"}
 {"id":164,"temperatura":25,"humedad":0,"pir":2,"luz":1,"tiempo":"Sat,May,29,2021,22:52:11","_id":"BLHPkTRyAZs2wsVT"}
 {"id":92,"temperatura":25,"humedad":0,"pir":0,"luz":1,"tiempo":"Sat,May,29,2021,22:46:41","_id":"BMxa1PvfvjsOUjNb"}
 {"id":32,"temperatura":24,"humedad":0,"pir":3,"luz":3,"tiempo":"Sat,May,29,2021,22:42:03","_id":"BZSCiD6w0ugbnZst"}
 {"id":60,"temperatura":24,"humedad":0,"pir":5,"luz":1,"tiempo":"Sat,May,29,2021,22:44:13","_id":"Bd4fCJZ7mOtuIAR1"}
+{"id":364,"temperatura":24,"humedad":58,"pir":0,"luz":16,"tiempo":"Sun,May,30,2021,00:24:55","_id":"BfFm8gudJwEAmA8Y"}
 {"id":346,"temperatura":24,"humedad":58,"pir":2,"luz":3,"tiempo":"Sat,May,29,2021,23:29:33","_id":"BkGtHshLZupQTE5E"}
 {"id":24,"temperatura":24,"humedad":0,"pir":2,"luz":1,"tiempo":"Sat,May,29,2021,22:41:26","_id":"C5L1KpT4SpV0kEPw"}
 {"id":136,"temperatura":25,"humedad":0,"pir":1,"luz":1,"tiempo":"Sat,May,29,2021,22:50:04","_id":"CW1JRrsMlPu6tt5y"}
@@ -156,6 +158,7 @@
 {"id":261,"temperatura":24,"humedad":59,"pir":5,"luz":2,"tiempo":"Sat,May,29,2021,23:07:50","_id":"RBhauzPhPM68dgEq"}
 {"id":69,"temperatura":25,"humedad":0,"pir":6,"luz":2,"tiempo":"Sat,May,29,2021,22:44:54","_id":"RD5j9Gm8T8Pe8ArP"}
 {"id":208,"temperatura":25,"humedad":69,"pir":1,"luz":78,"tiempo":"Sat,May,29,2021,22:55:34","_id":"RN9LkiNSyKhe5v6z"}
+{"id":366,"temperatura":24,"humedad":56,"pir":2,"luz":12,"tiempo":"Sun,May,30,2021,00:25:05","_id":"RScA3xoCmiA26BBM"}
 {"id":227,"temperatura":24,"humedad":0,"pir":0,"luz":2,"tiempo":"Sat,May,29,2021,23:00:52","_id":"RXR07ANR9tqMkM9m"}
 {"id":186,"temperatura":25,"humedad":73,"pir":2,"luz":3,"tiempo":"Sat,May,29,2021,22:53:52","_id":"RblOq1hYLvAKu41w"}
 {"id":315,"temperatura":24,"humedad":55,"pir":0,"luz":3,"tiempo":"Sat,May,29,2021,23:15:15","_id":"SMDkmub9ChLGDS0D"}
@@ -244,6 +247,7 @@
 {"id":209,"temperatura":25,"humedad":68,"pir":2,"luz":79,"tiempo":"Sat,May,29,2021,22:55:39","_id":"fxbyV8vptE9rnryk"}
 {"id":171,"temperatura":25,"humedad":0,"pir":2,"luz":0,"tiempo":"Sat,May,29,2021,22:52:43","_id":"g2Targ6S7es1Ejmm"}
 {"id":230,"temperatura":24,"humedad":69,"pir":0,"luz":3,"tiempo":"Sat,May,29,2021,23:01:06","_id":"gBGMJDnNsiI1EzlL"}
+{"id":365,"temperatura":24,"humedad":57,"pir":0,"luz":70,"tiempo":"Sun,May,30,2021,00:25:00","_id":"gILvOiLitGwBfSTS"}
 {"id":349,"temperatura":24,"humedad":61,"pir":0,"luz":2,"tiempo":"Sat,May,29,2021,23:35:25","_id":"gXOIHBlqBr7LK8uf"}
 {"id":148,"temperatura":25,"humedad":0,"pir":0,"luz":0,"tiempo":"Sat,May,29,2021,22:50:57","_id":"geviHH1GpGoG6FUC"}
 {"id":149,"temperatura":25,"humedad":0,"pir":2,"luz":2,"tiempo":"Sat,May,29,2021,22:51:01","_id":"gmtSgWTr2Ty9j8SZ"}
@@ -362,7 +366,3 @@
 {"id":157,"temperatura":25,"humedad":0,"pir":2,"luz":1,"tiempo":"Sat,May,29,2021,22:51:38","_id":"zo5h544SG6jQjbd2"}
 {"id":13,"temperatura":24,"humedad":0,"pir":2,"luz":0,"tiempo":"Sat,May,29,2021,22:40:35","_id":"zzlHrUX59RDhmIVI"}
 {"$$indexCreated":{"fieldName":"id","unique":true,"sparse":false}}
-{"id":363,"temperatura":23,"humedad":59,"pir":0,"luz":12,"tiempo":"Sun,May,30,2021,00:24:53","_id":"B5TPrjCpav6uWgMd"}
-{"id":364,"temperatura":24,"humedad":58,"pir":0,"luz":16,"tiempo":"Sun,May,30,2021,00:24:55","_id":"BfFm8gudJwEAmA8Y"}
-{"id":365,"temperatura":24,"humedad":57,"pir":0,"luz":70,"tiempo":"Sun,May,30,2021,00:25:00","_id":"gILvOiLitGwBfSTS"}
-{"id":366,"temperatura":24,"humedad":56,"pir":2,"luz":12,"tiempo":"Sun,May,30,2021,00:25:05","_id":"RScA3xoCmiA26BBM"}

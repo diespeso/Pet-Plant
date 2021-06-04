@@ -28,7 +28,7 @@
  const char* _SSID = "INFINITUMx5e2"; //esta es mi red de wifi
  const char* PASSWORD = "078603d626"; //mi clave, no me roben el wifi
  const uint16_t PORT = 80;
- const char* SERVER = "http://192.168.1.83:80"; //ip y puerto del cliente nodejs
+ const char* SERVER = "http://192.168.1.64:80"; //ip y puerto del cliente nodejs
 //byte temp = 0; //este es el contador que envio, lo uso para pruebas, en realidad sera un sensor
 
  using namespace websockets;

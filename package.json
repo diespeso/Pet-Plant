@@ -4,6 +4,7 @@
   "description": "monitoreo de cuidado a planta con enfoque humano estilo tamagotchi",
   "main": "index.js",
   "scripts": {
+    "dev": "sudo nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,6 +20,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "nedb": "^1.8.0",
+    "nodemon": "^2.0.7",
     "ws": "^7.4.5"
   }
 }
