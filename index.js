@@ -243,6 +243,9 @@ function generar_mensaje_webapp(mensaje_500ms) {
 
 function verificar_mensaje_webapp(mensaje) {
   var prop = 'indice_felicidad';
+  if(JSON.parse(mensaje).temp > 100) { //mala temp
+    return false;
+  }
   if (mensaje) {
     if (prop in JSON.parse(mensaje)) {
       return true;
@@ -357,7 +360,7 @@ s.on('connection', function (ws, req) {
     //demo in
 
     //demo out
-    console.log('Connected web client at 192.168.1.64');
+    console.log('Connected web client at 192.168.1.83');
     clients.page = ws;
     ws.on('message', function incoming(message) {
       //recibir mensajes del cliente web, aun no lo utilizo
@@ -383,4 +386,4 @@ s.on('connection', function (ws, req) {
   console.log('new client connected');
 });
 
-server.listen(80, '192.168.1.64'); //ip y puerto del servidor
+server.listen(80, '192.168.1.83'); //ip y puerto del servidor

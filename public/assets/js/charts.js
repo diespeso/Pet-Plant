@@ -1,3 +1,8 @@
+/*sock.addEventListener('message', function (event) {
+  data = event.data;
+  data = JSON.parse(data);
+  console.log(data.temp);
+});*/
 $(function () {
   // jQuery methods go here...
   console.log('jquery enabled');
