@@ -99,14 +99,19 @@ const changeData = (data) => {
   }
 
   // condiciones para cambiar imagen segun la indice_luz
-  if (indice_luz == 1) {
-    console.log(indice_luz);
-    document.querySelector('#img_luz').setAttribute('src', '/assets/img/Nublado(Color).svg');
-  } else if (indice_luz == 2) {
-    document.querySelector('#img_luz').setAttribute('src', '/assets/img/Sol(Perfecto).svg');
-  } else if (indice_luz == 3) {
-    document.querySelector('#img_luz').setAttribute('src', '/assets/img/Sol(Exceso).svg');
+  if(data.noche) {
+    document.querySelector('#img_luz').setAttribute('src', '/assets/img/Noche(Color).svg');
+  } else {
+    if (indice_luz == 1) {
+      console.log(indice_luz);
+      document.querySelector('#img_luz').setAttribute('src', '/assets/img/Nublado(Color).svg');
+    } else if (indice_luz == 2) {
+      document.querySelector('#img_luz').setAttribute('src', '/assets/img/Sol(Perfecto).svg');
+    } else if (indice_luz == 3) {
+      document.querySelector('#img_luz').setAttribute('src', '/assets/img/Sol(Exceso).svg');
+    }
   }
+  
 
   // condiciones para cambiar imagen segun la carita feliz
   if (indice_felicidad == 1) {

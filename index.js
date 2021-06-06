@@ -20,6 +20,8 @@ var c_pir = 0; //contador de cuantas veces se activo el pir entre cada actualiza
 
 mensaje = null;
 
+flag_noche = false;
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -86,6 +88,15 @@ function calcular_indices() {
         iluminaciones.push(anteriores[i].luz);
         interacciones.push(anteriores[i].pir);
       }
+
+      hora = parseInt(anteriores[anteriores.length - 1].tiempo.split(',')[4].split(':')[0]);
+
+      //sin tomar en cuenta horario de verano, a las 7 ya deberia estar relativamente obscuro / obscuro -> obscuro
+      //para el amanecer a las 7 am ya debería haber algo de luz, aunque no garantiza que esa luz de en la ventana
+      flag_noche = hora < 7 || hora >= 19;
+      
+      console.log("flag noche");
+      console.log(flag_noche);
 
       i_h = calcular_indice_humedad(humedades);
       indices.humedad = i_h;
@@ -186,6 +197,9 @@ function calcular_indice_luz(iluminaciones) {
 }
 
 function normalizar_indice_luz(indice) {
+  if(flag_noche) {
+    return 2;
+  }
   if (indice <= 10) {
     return 1; //falta de luz
   } else if (indice <= 75) {
@@ -227,6 +241,8 @@ function generar_mensaje_webapp(mensaje_500ms) {
       mensaje.pir_live = mensaje.pir;
       mensaje.indice_luz = indices.luz;
       mensaje.indice_felicidad = indices.felicidad;
+      //nuevo
+      mensaje.noche = flag_noche;
       delete mensaje.pir;
       //console.log(mensaje);
       return JSON.stringify(mensaje, null, 2);
